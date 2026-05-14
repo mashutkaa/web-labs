@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Wind, Activity, BookOpen, Info } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  BookOpen,
+  Info,
+  MapPin,
+  Wind,
+} from "lucide-react";
 import Link from "next/link";
 import "./globals.css";
 
@@ -13,6 +20,16 @@ const navItems = [
     path: "/",
     label: "Панель моніторингу",
     icon: Activity,
+  },
+  {
+    path: "/map",
+    label: "Карта станцій",
+    icon: MapPin,
+  },
+  {
+    path: "/analytics",
+    label: "Графіки",
+    icon: BarChart3,
   },
   {
     path: "/pollutants",
