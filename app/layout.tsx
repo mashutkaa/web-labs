@@ -68,10 +68,10 @@ export default function RootLayout({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    Лабораторна робота
+                    Лабораторні роботи
                   </p>
                   <p className="text-xs text-gray-500">
-                    Next.js та SSR концепції
+                    Гупаленко Марія | ТР-32
                   </p>
                 </div>
               </div>

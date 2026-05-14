@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Pollutant } from "@/types/air-quality";
 
 export const metadata = {
-  title: "Довідник забруднювачів | Веб-Лабс",
+  title: "Довідник забруднювачів | ЕкоМонітор",
   description: "Референс для екологічних показників та стандартів ВООЗ",
 };
 

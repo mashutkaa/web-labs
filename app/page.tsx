@@ -8,7 +8,7 @@ import { StatsWidget } from "@/components/StatsWidget";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Панель моніторингу | Веб-Лабс",
+  title: "Панель моніторингу | ЕкоМонітор",
   description: "Огляд мережі екологічного моніторингу",
 };
 

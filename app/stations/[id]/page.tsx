@@ -32,12 +32,12 @@ export async function generateMetadata(props: StationDetailPageProps) {
 
   if (!station) {
     return {
-      title: "Станція не знайдена | Веб-Лабс",
+      title: "Станція не знайдена | ЕкоМонітор",
     };
   }
 
   return {
-    title: `${station.name} | Веб-Лабс`,
+    title: `${station.name} | ЕкоМонітор`,
     description: `Детальна інформація про станцію ${station.name} в ${station.city}`,
   };
 }

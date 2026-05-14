@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 
 export const metadata = {
-  title: "Станції | Веб-Лабс",
+  title: "Станції | ЕкоМонітор",
   description: "Детальна інформація про моніторингові станції",
 };
 

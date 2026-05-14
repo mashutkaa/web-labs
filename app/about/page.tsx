@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { BookOpen, Code, Server, Database } from "lucide-react";
 
 export const metadata = {
-  title: "Про проєкт | Веб-Лабс",
+  title: "Про проєкт | ЕкоМонітор",
   description: "Інформація про проєкт моніторингу якості повітря",
 };
 
@@ -22,14 +22,11 @@ export default function About() {
         </CardHeader>
         <CardContent className="prose prose-emerald max-w-none text-gray-600">
           <p>
-            Цей проєкт демонструє передові архітектурні патерни
-            фронтенд-розробки з використанням Next.js та TypeScript. Він
-            показує, як побудувати надійний додаток із строгою типізацією,
-            імітацією API та складним управлінням станом.
+            Цей навчальний проєкт демонструє веб-додаток, який будується на Next.js та TypeScript.
           </p>
           <ul className="mt-4 space-y-2 list-disc pl-5">
             <li>
-              <strong>Майстерність TypeScript:</strong> Широке використання
+              <strong>TypeScript:</strong> Широке використання
               інтерфейсів, перелічень, дженериків та строгої типізації.
             </li>
             <li>
@@ -38,7 +35,7 @@ export default function About() {
             </li>
             <li>
               <strong>Архітектура компонентів:</strong> Повторно використовувані
-              UI-компоненти, побудовані з Tailwind CSS.
+              UI-компоненти, стилізовані з Tailwind CSS.
             </li>
             <li>
               <strong>Візуалізація даних:</strong> Інтеграція Recharts для
@@ -79,7 +76,7 @@ export default function About() {
               Шар імітації API
             </h3>
             <p className="text-sm text-gray-600">
-              Складний шар мок-API імітує мережеві запити зі штучними
+              Шар мок-API імітує мережеві запити зі штучними
               затримками. Він підтримує розширені функції, такі як фільтрація,
               сортування та пагінація, імітуючи реальний бекенд-сервіс.
             </p>
