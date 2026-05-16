@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { headers } from "next/headers";
 import {
   mockStations,
   mockMeasurements,
@@ -15,13 +16,14 @@ import {
   filterAndSort,
   buildSortComparator,
   tryPaginate,
-  internalServerErrorResponse,
   HTTP_STATUS,
 } from "@/lib/api/handlers";
+import { internalServerErrorForRequest } from "@/lib/api/request-errors";
 import { ErrorCode } from "@/types/api/error";
 import { StationType, StationStatus } from "@/types/station";
 import { AirQualityIndex, Pollutant } from "@/types/air-quality";
 import type { MonitoringStation, Coordinates } from "@/types/station";
+import { logger } from "@/lib/logger";
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
@@ -152,12 +154,23 @@ export async function GET(request: NextRequest) {
       sortOrder,
     });
 
+    const h = await headers();
+    logger.debug(
+      {
+        route: "GET /api/stations",
+        request_id: h.get("x-request-id") ?? undefined,
+        returned_count: stationsWithData.length,
+        all_flag: Boolean(all),
+      },
+      "stations_list_ok",
+    );
+
     return createNextResponse(response, HTTP_STATUS.OK);
   } catch (error) {
-    return internalServerErrorResponse(
+    return internalServerErrorForRequest(
+      request,
       "GET /api/stations error:",
       error,
-      "Failed to fetch stations",
     );
   }
 }
@@ -188,6 +201,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (existingStation) {
+      logger.warn(
+        {
+          route: "POST /api/stations",
+          conflict_name: name,
+          existing_id: existingStation.id,
+        },
+        "station_duplicate_name",
+      );
       const errorResponse = {
         code: ErrorCode.DUPLICATE_ENTRY,
         message: `Station with name "${name}" already exists`,
@@ -244,7 +265,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof SyntaxError) {
       const errorResponse = {
         code: ErrorCode.INVALID_REQUEST,
-        message: "Invalid JSON in request body",
+        message: "Некоректний формат JSON у тілі запиту",
         statusCode: HTTP_STATUS.BAD_REQUEST,
         timestamp: new Date().toISOString(),
       };
@@ -255,10 +276,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return internalServerErrorResponse(
+    return internalServerErrorForRequest(
+      request,
       "POST /api/stations error:",
       error,
-      "Failed to create station",
     );
   }
 }

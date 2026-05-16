@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
   ChevronRight,
@@ -12,6 +12,7 @@ import {
   Search,
 } from "lucide-react";
 import { ChartsDashboardPanel } from "@/components/ChartsDashboardPanel";
+import { gaEvent } from "@/lib/gtag";
 import type { MonitoringStation } from "@/types/station";
 import type { Measurement } from "@/types/measurement";
 
@@ -72,6 +73,31 @@ export function MapChartsLayout({ stations }: MapChartsLayoutProps) {
   const [measureLoading, setMeasureLoading] = useState(false);
   const [measureError, setMeasureError] = useState<string | null>(null);
 
+  const filtersBootRef = useRef(false);
+  const lastZoomSentRef = useRef(0);
+
+  const handleStationSelect = useCallback(
+    (id: string | null, source: "map" | "list") => {
+      setSelectedId(id);
+      if (id) {
+        gaEvent("map_station_click", {
+          station_id: id,
+          interaction_source: source,
+        });
+      }
+    },
+    [],
+  );
+
+  const onMapZoomEnd = useCallback((zoom: number) => {
+    const now = Date.now();
+    if (now - lastZoomSentRef.current < 2000) return;
+    lastZoomSentRef.current = now;
+    gaEvent("map_zoom", {
+      zoom_level: Math.round(zoom * 10) / 10,
+    });
+  }, []);
+
   const cityOptions = useMemo(() => {
     const set = new Set(stations.map((s) => s.city).filter(Boolean));
     return [...set].sort((a, b) => a.localeCompare(b, "uk"));
@@ -130,9 +156,55 @@ export function MapChartsLayout({ stations }: MapChartsLayoutProps) {
     return () => ac.abort();
   }, [selectedId, days]);
 
+  useEffect(() => {
+    if (!selectedId || measureLoading) return;
+    if (measurements.length === 0) return;
+    gaEvent("dashboard_charts_view", {
+      station_id: selectedId,
+      period_days: days,
+      data_points: measurements.length,
+    });
+  }, [selectedId, days, measureLoading, measurements.length]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const q = search.trim();
+      if (!q) return;
+      gaEvent("charts_filter", {
+        context: "map_dashboard",
+        filter_type: "search",
+        query_length: q.length,
+      });
+    }, 900);
+    return () => window.clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
+    if (!filtersBootRef.current) {
+      filtersBootRef.current = true;
+      return;
+    }
+    gaEvent("charts_filter", {
+      context: "map_dashboard",
+      filter_type: "city",
+      city: cityFilter || "all",
+    });
+  }, [cityFilter]);
+
+  useEffect(() => {
+    if (!filtersBootRef.current) return;
+    if (!selectedId) return;
+    gaEvent("charts_filter", {
+      context: "map_dashboard",
+      filter_type: "period_days",
+      period_days: days,
+    });
+  }, [days, selectedId]);
+
   const handleClearSelection = useCallback(() => {
     setSelectedId(null);
     setPieScope("network");
+    gaEvent("map_selection_clear");
   }, []);
 
   const pieStations = useMemo(() => {
@@ -241,7 +313,7 @@ export function MapChartsLayout({ stations }: MapChartsLayoutProps) {
                       type="button"
                       role="option"
                       aria-selected={active}
-                      onClick={() => setSelectedId(s.id)}
+                      onClick={() => handleStationSelect(s.id, "list")}
                       className={`flex w-full flex-col rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                         active
                           ? "bg-emerald-50 ring-2 ring-emerald-500 ring-offset-1"
@@ -267,7 +339,8 @@ export function MapChartsLayout({ stations }: MapChartsLayoutProps) {
         <StationsMapLazy
           stations={visibleStations}
           selectedId={selectedId}
-          onSelectChange={setSelectedId}
+          onSelectChange={(id) => handleStationSelect(id, "map")}
+          onZoomChange={onMapZoomEnd}
         />
 
         <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-950">
@@ -332,7 +405,14 @@ export function MapChartsLayout({ stations }: MapChartsLayoutProps) {
             <div className="inline-flex rounded-lg border border-gray-200 p-0.5 text-xs">
               <button
                 type="button"
-                onClick={() => setPieScope("network")}
+                onClick={() => {
+                  setPieScope("network");
+                  gaEvent("charts_filter", {
+                    context: "map_dashboard",
+                    filter_type: "pie_scope",
+                    pie_scope: "network",
+                  });
+                }}
                 className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                   pieScope === "network"
                     ? "bg-gray-900 text-white"
@@ -344,7 +424,14 @@ export function MapChartsLayout({ stations }: MapChartsLayoutProps) {
               <button
                 type="button"
                 disabled={!selectedStation}
-                onClick={() => setPieScope("station")}
+                onClick={() => {
+                  setPieScope("station");
+                  gaEvent("charts_filter", {
+                    context: "map_dashboard",
+                    filter_type: "pie_scope",
+                    pie_scope: "station",
+                  });
+                }}
                 className={`rounded-md px-3 py-1.5 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                   pieScope === "station"
                     ? "bg-gray-900 text-white"

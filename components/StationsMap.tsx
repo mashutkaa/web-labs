@@ -61,17 +61,23 @@ export interface StationsMapProps {
   stations: MonitoringStation[];
   selectedId: string | null;
   onSelectChange: (id: string | null) => void;
+  /** Після зміни масштабу карти (для аналітики). */
+  onZoomChange?: (zoomLevel: number) => void;
 }
 
 export function StationsMap({
   stations,
   selectedId,
   onSelectChange,
+  onZoomChange,
 }: StationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
   const markersRef = useRef<CircleMarker[]>([]);
+  const onZoomChangeRef = useRef(onZoomChange);
+  onZoomChangeRef.current = onZoomChange;
+  const zoomListenerAttachedRef = useRef(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -98,6 +104,13 @@ export function StationsMap({
         const group = L.layerGroup().addTo(map);
         mapRef.current = map;
         layerRef.current = group;
+
+        if (!zoomListenerAttachedRef.current) {
+          zoomListenerAttachedRef.current = true;
+          map.on("zoomend", () => {
+            onZoomChangeRef.current?.(map.getZoom());
+          });
+        }
       }
 
       const map = mapRef.current!;
@@ -148,6 +161,7 @@ export function StationsMap({
       mapRef.current = null;
       layerRef.current = null;
       markersRef.current = [];
+      zoomListenerAttachedRef.current = false;
     };
   }, []);
 

@@ -1,17 +1,54 @@
 import { headers } from "next/headers";
+import { getPreparedMeasurementsForStation } from "@/lib/api/measurement-query-helpers";
+import { mockStations } from "@/lib/mock-data";
+import { logger } from "@/lib/logger";
 import type { MonitoringStation } from "@/types/station";
 import type { Measurement } from "@/types/measurement";
 
 const fetchOptions: RequestInit = { cache: "no-store" };
 
+function isLocalhostUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Базовий URL для звернень до власного API з серверних компонентів (SSR).
- * У продакшені задайте NEXT_PUBLIC_APP_URL (наприклад https://your-domain.com).
+ *
+ * На Vercel: задайте NEXT_PUBLIC_APP_URL=https://ваш-домен.vercel.app
+ * (не localhost). Якщо змінна порожня або localhost — використовується VERCEL_URL
+ * або заголовки поточного запиту.
  */
 export async function getServerOrigin(): Promise<string> {
   const fromEnv = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
-  if (fromEnv) {
+  const onVercel = Boolean(process.env.VERCEL);
+
+  if (fromEnv && !(onVercel && isLocalhostUrl(fromEnv))) {
     return fromEnv;
+  }
+
+  if (onVercel && fromEnv && isLocalhostUrl(fromEnv)) {
+    logger.warn(
+      {
+        configured: fromEnv,
+        hint: "Set NEXT_PUBLIC_APP_URL to your Vercel https URL, not localhost",
+      },
+      "ignored_localhost_app_url_on_vercel",
+    );
+  }
+
+  const vercelHost =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.replace(/\/$/, "") ||
+    process.env.VERCEL_URL?.replace(/\/$/, "");
+  if (vercelHost) {
+    const host = vercelHost.startsWith("http")
+      ? vercelHost
+      : `https://${vercelHost}`;
+    return host.replace(/\/$/, "");
   }
 
   const h = await headers();
@@ -28,6 +65,10 @@ async function apiGet<T>(path: string): Promise<T | null> {
     const res = await fetch(url, fetchOptions);
     const json: unknown = await res.json().catch(() => null);
     if (!res.ok || !json || typeof json !== "object") {
+      logger.warn(
+        { path, status: res.status, origin },
+        "server_api_fetch_not_ok",
+      );
       return null;
     }
     const body = json as { success?: boolean; data?: T };
@@ -35,7 +76,14 @@ async function apiGet<T>(path: string): Promise<T | null> {
       return null;
     }
     return body.data;
-  } catch {
+  } catch (err) {
+    logger.warn(
+      {
+        path,
+        err: err instanceof Error ? err.message : String(err),
+      },
+      "server_api_fetch_failed",
+    );
     return null;
   }
 }
@@ -43,7 +91,14 @@ async function apiGet<T>(path: string): Promise<T | null> {
 /** Усі станції (відповідає GET /api/stations?all=true) */
 export async function fetchStationsAll(): Promise<MonitoringStation[]> {
   const data = await apiGet<MonitoringStation[]>("/api/stations?all=true");
-  return data ?? [];
+  if (data && data.length > 0) {
+    return data;
+  }
+  logger.warn(
+    { fallback: "mockStations", count: mockStations.length },
+    "fetchStationsAll_using_mock_fallback",
+  );
+  return mockStations;
 }
 
 /** Дані станції (GET /api/stations/[id]) */
@@ -51,7 +106,9 @@ export async function fetchStationById(
   id: string,
 ): Promise<MonitoringStation | null> {
   const encoded = encodeURIComponent(id);
-  return apiGet<MonitoringStation>(`/api/stations/${encoded}`);
+  const data = await apiGet<MonitoringStation>(`/api/stations/${encoded}`);
+  if (data) return data;
+  return mockStations.find((s) => s.id === id) ?? null;
 }
 
 /** Вимірювання за останні `days` діб через GET /api/stations/[id]/measurements */
@@ -73,5 +130,13 @@ export async function fetchStationMeasurementsLastDays(
   const data = await apiGet<Measurement[]>(
     `/api/stations/${encoded}/measurements?${params.toString()}`,
   );
-  return data ?? [];
+  if (data && data.length > 0) {
+    return data;
+  }
+  return getPreparedMeasurementsForStation(stationId, {
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+    sort: "timestamp",
+    order: "asc",
+  }).slice(0, 250);
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { ChartsDashboardPanel } from "@/components/ChartsDashboardPanel";
+import { gaEvent } from "@/lib/gtag";
 import type { MonitoringStation } from "@/types/station";
 import type { Measurement } from "@/types/measurement";
 
@@ -17,6 +19,13 @@ export function AnalyticsChartsClient({
   measurements,
   lineStationName,
 }: AnalyticsChartsClientProps) {
+  useEffect(() => {
+    gaEvent("analytics_charts_page", {
+      section: "standalone",
+      has_line_data: measurements.length > 0,
+    });
+  }, [measurements.length]);
+
   return (
     <div className="mx-auto max-w-6xl space-y-10 px-4 py-8">
       <header className="space-y-2">

@@ -2,6 +2,7 @@ import type { ZodError } from "zod";
 import type { FieldError } from "@/types/api/error";
 import { ErrorCode, HTTP_STATUS } from "@/types/api/error";
 import { createErrorResponse, createNextResponse } from "@/lib/api/handlers";
+import { logger } from "@/lib/logger";
 
 /**
  * Перетворює Zod issues у структуру полів для відповіді API.
@@ -28,6 +29,14 @@ export function validationErrorResponse(
     timestamp: new Date().toISOString(),
     fields: zodIssuesToFieldErrors(error),
   };
+  logger.warn(
+    {
+      code: payload.code,
+      fields_count: payload.fields.length,
+      issues_sample: payload.fields.slice(0, 5),
+    },
+    "validation_failed",
+  );
   return createNextResponse(
     createErrorResponse(payload),
     HTTP_STATUS.BAD_REQUEST,

@@ -23,6 +23,7 @@ import {
 import type {
   ApiErrorBase,
 } from "@/types/api/error";
+import { logger } from "@/lib/logger";
 
 /**
  * Типы запросов
@@ -261,9 +262,16 @@ export function tryPaginate<T>(
 export function internalServerErrorResponse(
   logLabel: string,
   error: unknown,
-  message = "An unexpected error occurred",
+  message = "На сервері сталася помилка. Спробуйте пізніше.",
 ): Response {
-  console.error(logLabel, error);
+  if (error instanceof Error) {
+    logger.error({ err: error, log_label: logLabel }, message);
+  } else {
+    logger.error(
+      { err_value: String(error), log_label: logLabel },
+      message,
+    );
+  }
   return createNextResponse(
     createErrorResponse({
       code: ErrorCode.INTERNAL_SERVER_ERROR,
@@ -311,7 +319,11 @@ export function filterAndSort<T>(
  * @returns ApiError объект для ответа
  */
 export function handleApiError(error: unknown): ApiError {
-  console.error("API Error:", error);
+  if (error instanceof Error) {
+    logger.error({ err: error }, "handleApiError");
+  } else {
+    logger.error({ err_value: String(error) }, "handleApiError");
+  }
 
   if (error instanceof Error) {
     // Проверка на известные типы ошибок

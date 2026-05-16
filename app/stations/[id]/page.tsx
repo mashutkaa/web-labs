@@ -17,6 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { AqiBadge } from "@/components/AqiBadge";
 import { StationDetailClient } from "@/components/StationDetailClient";
+import { StationAnalytics } from "@/components/StationAnalytics";
+import { StationExportButton } from "@/components/StationExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -58,32 +60,40 @@ export default async function StationDetails(
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href="/"
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
-        </Link>
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">{station.name}</h1>
-            {station.isActive ? (
-              <Badge variant="default">Онлайн</Badge>
-            ) : (
-              <Badge variant="danger">Офлайн</Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-4 text-gray-500 mt-2 text-sm">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" /> {station.city} ({station.type})
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" /> Встановлено:{" "}
-              {new Date(station.installedDate).toLocaleDateString("uk-UA")}
-            </span>
+      <StationAnalytics stationId={station.id} stationName={station.name} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">{station.name}</h1>
+              {station.isActive ? (
+                <Badge variant="default">Онлайн</Badge>
+              ) : (
+                <Badge variant="danger">Офлайн</Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-4 text-gray-500 mt-2 text-sm">
+              <span className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" /> {station.city} ({station.type})
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" /> Встановлено:{" "}
+                {new Date(station.installedDate).toLocaleDateString("uk-UA")}
+              </span>
+            </div>
           </div>
         </div>
+        <StationExportButton
+          stationId={station.id}
+          stationName={station.name}
+          measurements={measurements}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

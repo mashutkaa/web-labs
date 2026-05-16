@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import "./globals.css";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
   title: "ЕкоМонітор - Панель моніторингу якості повітря",
@@ -51,6 +52,7 @@ export default function RootLayout({
   return (
     <html lang="uk">
       <body className="bg-gray-50">
+        <GoogleAnalytics />
         <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
           {/* Desktop Sidebar Navigation */}
           <aside className="hidden md:block w-64 bg-white border-r border-gray-200 sticky top-0 h-screen overflow-y-auto flex-shrink-0">
